@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ListChecks, Plus, Search, Trash2, X } from "lucide-react";
+import { Archive, BarChart3, ListChecks, Plus, Search, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -153,6 +153,11 @@ export function ProjectView({ id }: { id: string }) {
           <Button size="sm" onClick={() => openDialog(null)}>
             <Plus className="size-4" /> New task
           </Button>
+          <Link href={`/projects/${id}/analytics`}>
+            <Button variant="outline" size="sm">
+              <BarChart3 className="size-4" /> Analytics
+            </Button>
+          </Link>
           <Link href={`/projects/${id}/sprints`}>
             <Button variant="outline" size="sm">
               <ListChecks className="size-4" /> Backlog and sprints

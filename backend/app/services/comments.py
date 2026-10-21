@@ -5,6 +5,7 @@ from supabase import Client
 from app.core.auth import require_owner
 from app.core.errors import Forbidden, NotFound
 from app.services import activity
+from app.services.notifications import notify
 from app.services.tasks import get_task_for_member
 
 MENTION_RE = re.compile(r"@\[[^\]]+\]\(([0-9a-fA-F-]{36})\)")
@@ -27,9 +28,21 @@ def list_comments(db: Client, task_id: str, user_id: str) -> list[dict]:
 
 
 def add_comment(db: Client, task_id: str, user_id: str, body: str) -> dict:
-    task, _ = get_task_for_member(db, task_id, user_id)
+    task, project = get_task_for_member(db, task_id, user_id)
     row = db.table("comments").insert({"task_id": task_id, "author_id": user_id, "body": body}).execute().data[0]
     activity.log(db, task["project_id"], user_id, "commented on task", task_id, title=task["title"])
+    mentioned = mentioned_ids(body)
+    if mentioned:
+        # only notify people who can actually see this workspace
+        members = (
+            db.table("workspace_members")
+            .select("user_id")
+            .eq("workspace_id", project["workspace_id"])
+            .in_("user_id", list(mentioned))
+            .execute()
+            .data
+        )
+        notify(db, {m["user_id"] for m in members}, user_id, "mention", "{actor} mentioned you on “{title}”", task)
     return row
 
 

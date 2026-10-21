@@ -16,7 +16,7 @@ class FakeQuery:
         return lambda *a, **k: self
 
     def execute(self):
-        return type("R", (), {"data": self.rows})()
+        return type("R", (), {"data": self.rows, "count": len(self.rows)})()
 
 
 class FakeDB:

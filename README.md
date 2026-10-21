@@ -35,4 +35,5 @@ Leaving `GEMINI_API_KEY` empty disables AI features; the rest of the app still w
 - [x] Stage 4: tasks and Kanban board
 - [x] Stage 5: filters, search, comments with @mentions, task activity
 - [x] Stage 6: backlog and sprints
-- [ ] Stages 7-10: notifications/analytics, AI, polish, deploy
+- [x] Stage 7: notifications and project analytics (burndown)
+- [ ] Stages 8-10: AI, polish, deploy

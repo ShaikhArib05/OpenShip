@@ -4,6 +4,7 @@ from app.core.access import get_project_for_member
 from app.core.auth import get_member_role
 from app.core.errors import AppError, NotFound
 from app.services import activity
+from app.services.notifications import notify
 
 POSITION_STEP = 1000.0
 NON_NULLABLE = ("title", "status", "priority", "labels")
@@ -75,6 +76,7 @@ def create_task(db: Client, project_id: str, user_id: str, data: dict) -> dict:
     }
     task = db.table("tasks").insert(row).execute().data[0]
     activity.log(db, project_id, user_id, "created task", task["id"], title=task["title"])
+    notify(db, {task["assignee_id"]}, user_id, "assignment", "{actor} assigned you “{title}”", task)
     return task
 
 
@@ -96,6 +98,18 @@ def update_task(db: Client, task_id: str, user_id: str, changes: dict) -> dict:
     if "assignee_id" in changes and changes["assignee_id"] != task["assignee_id"]:
         activity.log(db, task["project_id"], user_id, "assigned task", task_id,
                      title=task["title"], assignee_id=changes["assignee_id"])
+    if "assignee_id" in changes and changes["assignee_id"] != task["assignee_id"]:
+        notify(db, {changes["assignee_id"]}, user_id, "assignment", "{actor} assigned you “{title}”", updated)
+    if changes.get("status") and changes["status"] != task["status"]:
+        label = changes["status"].replace("_", " ")
+        notify(
+            db,
+            {updated["assignee_id"], task["creator_id"]},
+            user_id,
+            "status_change",
+            "{actor} moved “{title}” to " + label,
+            updated,
+        )
     if set(changes) - {"status", "assignee_id", "position"}:
         activity.log(db, task["project_id"], user_id, "updated task", task_id, title=task["title"])
     return updated

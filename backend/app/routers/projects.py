@@ -4,6 +4,7 @@ from supabase import Client
 from app.core.auth import CurrentUser, get_current_user
 from app.core.db import get_db
 from app.schemas import ProjectCreate, ProjectUpdate
+from app.services import analytics as analytics_svc
 from app.services import dashboard as dash
 from app.services import projects as svc
 
@@ -30,6 +31,11 @@ def dashboard(workspace_id: str, user: CurrentUser = Depends(get_current_user), 
 @router.get("/projects/{project_id}")
 def get_project(project_id: str, user: CurrentUser = Depends(get_current_user), db: Client = Depends(get_db)):
     return svc.get_project(db, project_id, user.id)
+
+
+@router.get("/projects/{project_id}/analytics")
+def analytics(project_id: str, user: CurrentUser = Depends(get_current_user), db: Client = Depends(get_db)):
+    return analytics_svc.project_analytics(db, project_id, user.id)
 
 
 @router.patch("/projects/{project_id}")

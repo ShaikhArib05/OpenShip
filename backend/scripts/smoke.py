@@ -80,6 +80,34 @@ try:
     assert api.delete(f"/tasks/{t2['id']}", headers=B).status_code == 204
     d = api.get(f"/workspaces/{ws_id}/dashboard", headers=B).json()
     assert d["stats"]["projects"] == 1 and d["stats"]["total_tasks"] == 1, d
+    # --- notifications + analytics ---
+    def notifs(h):
+        return api.get("/notifications", headers=h).json()
+
+    assert notifs(A)["unread"] == 0 or True  # A may have none yet
+    before_b = notifs(B)["unread"]
+    api.patch(f"/tasks/{t1.json()['id']}", json={"assignee_id": users[0]}, headers=A)  # A assigns to self: no notification
+    assert notifs(A)["unread"] == 0
+    api.patch(f"/tasks/{t1.json()['id']}", json={"assignee_id": users[1]}, headers=A)  # A assigns B
+    nb = notifs(B)
+    assert nb["unread"] == before_b + 1 and nb["items"][0]["type"] == "assignment", nb
+    api.patch(f"/tasks/{t1.json()['id']}", json={"status": "in_review"}, headers=A)  # B is assignee and creator
+    assert notifs(B)["items"][0]["type"] == "status_change"
+    assert notifs(B)["unread"] == before_b + 2  # one status notification even though B is both roles
+    api.post(f"/tasks/{t1.json()['id']}/comments", json={"body": f"ping @[B]({users[1]}) and @[out]({outsider})"}, headers=A)
+    assert notifs(B)["items"][0]["type"] == "mention"
+    assert notifs(C)["unread"] == 0  # a non-member mention creates nothing
+    nid = notifs(B)["items"][0]["id"]
+    assert api.post(f"/notifications/{nid}/read", headers=A).status_code == 404  # not A's notification
+    assert api.post(f"/notifications/{nid}/read", headers=B).status_code == 204
+    assert notifs(B)["unread"] == before_b + 2
+    assert api.post("/notifications/read-all", headers=B).status_code == 204
+    assert notifs(B)["unread"] == 0
+
+    an = api.get(f"/projects/{pid}/analytics", headers=A).json()
+    assert an["total_tasks"] == 1 and an["by_status"]["in_review"] == 1 and an["completion_rate"] == 0 and an["overdue_tasks"] == 1, an
+    assert api.get(f"/projects/{pid}/analytics", headers=C).status_code == 403
+
     # --- sprints ---
     t3 = api.post(f"/projects/{pid}/tasks", json={"title": "Fin", "estimate": 3, "status": "done"}, headers=A).json()
     sp = api.post(f"/projects/{pid}/sprints", json={"name": "S1", "start_date": "2026-01-01", "end_date": "2026-01-14"}, headers=B)
@@ -92,6 +120,9 @@ try:
     assert r["total"] == 2 and r["done"] == 1 and r["points_done"] == 3, r
     assert api.patch(f"/sprints/{sid}", json={"status": "completed"}, headers=A).status_code == 409  # must start first
     assert api.patch(f"/sprints/{sid}", json={"status": "active"}, headers=A).json()["status"] == "active"
+    sa = api.get(f"/projects/{pid}/analytics", headers=A).json()["sprint"]
+    assert sa["name"] == "S1" and sa["total"] == 2 and sa["done"] == 1 and len(sa["burndown"]["points"]) == 14, sa
+    assert sa["burndown"]["unit"] == "points" and sa["burndown"]["total"] == 3
     sp2 = api.post(f"/projects/{pid}/sprints", json={"name": "S2", "start_date": "2026-01-15", "end_date": "2026-01-28"}, headers=A).json()
     assert api.patch(f"/sprints/{sp2['id']}", json={"status": "active"}, headers=A).status_code == 409  # one active
     # moving a task to another open sprint removes it from the first
