@@ -169,7 +169,7 @@ export function ProjectView({ id }: { id: string }) {
           <Search className="pointer-events-none absolute top-2 left-2.5 size-4 text-muted-foreground" />
           <Input
             className="pl-8"
-            placeholder="Search tasksÖ"
+            placeholder="Search tasks‚Ä¶"
             aria-label="Search tasks by title"
             value={filters.q}
             onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
@@ -212,7 +212,7 @@ export function ProjectView({ id }: { id: string }) {
 
       {tasks.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          {filtersActive ? "No tasks match these filters." : "No tasks yet. Add one with ìNew taskî or a columnís + button."}
+          {filtersActive ? "No tasks match these filters." : "No tasks yet. Add one with ‚ÄúNew task‚Äù or a column‚Äôs + button."}
         </p>
       )}
 

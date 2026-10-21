@@ -30,5 +30,8 @@ Leaving `GEMINI_API_KEY` empty disables AI features; the rest of the app still w
 ## Status
 
 - [x] Stage 1: repo, schema with RLS, FastAPI skeleton (auth verification, workspaces/invites, tests)
-- [ ] Stage 2: frontend auth + workspace UI
-- [ ] Stages 3–10: projects/dashboard, tasks/Kanban, filters/comments, sprints, notifications/analytics, AI, polish, deploy
+- [x] Stage 2: frontend auth + workspace UI
+- [x] Stage 3: projects and dashboard
+- [x] Stage 4: tasks and Kanban board
+- [x] Stage 5: filters, search, comments with @mentions, task activity
+- [ ] Stages 6-10: sprints, notifications/analytics, AI, polish, deploy
