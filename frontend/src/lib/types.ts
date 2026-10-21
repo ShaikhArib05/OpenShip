@@ -59,3 +59,34 @@ export interface Dashboard {
     profiles: { full_name: string | null; email: string } | null;
   }[];
 }
+
+export interface Task {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assignee_id: string | null;
+  creator_id: string;
+  due_date: string | null;
+  labels: string[];
+  estimate: number | null;
+  position: number;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export const STATUSES: { value: TaskStatus; label: string }[] = [
+  { value: "todo", label: "To Do" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "in_review", label: "In Review" },
+  { value: "done", label: "Done" },
+];
+
+export const PRIORITIES: { value: TaskPriority; label: string }[] = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "urgent", label: "Urgent" },
+];
