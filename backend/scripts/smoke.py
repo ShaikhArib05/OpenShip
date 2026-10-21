@@ -67,6 +67,16 @@ try:
     C = {"Authorization": f"Bearer {tok}"}
     assert api.get(f"/projects/{pid}/tasks", headers=C).status_code == 403
     assert api.patch(f"/tasks/{t2['id']}", json={"title": "hax"}, headers=C).status_code == 403
+    cm = api.post(f"/tasks/{t2['id']}/comments", json={"body": f"hey @[A]({users[0]})"}, headers=B)
+    assert cm.status_code == 201, cm.text
+    cl = api.get(f"/tasks/{t2['id']}/comments", headers=A).json()
+    assert len(cl) == 1 and cl[0]["profiles"]["email"] == "b-" + email, cl
+    assert api.get(f"/tasks/{t2['id']}/comments", headers=C).status_code == 403
+    assert api.delete(f"/comments/{cm.json()['id']}", headers=C).status_code == 403
+    assert api.post(f"/tasks/{t2['id']}/comments", json={"body": "owner note"}, headers=A).status_code == 201
+    acts = api.get(f"/tasks/{t2['id']}/activity", headers=B).json()
+    assert {"created task", "moved task", "commented on task"} <= {a["action"] for a in acts}, acts
+    assert api.delete(f"/comments/{cm.json()['id']}", headers=A).status_code == 204  # owner can moderate
     assert api.delete(f"/tasks/{t2['id']}", headers=B).status_code == 204
     d = api.get(f"/workspaces/{ws_id}/dashboard", headers=B).json()
     assert d["stats"]["projects"] == 1 and d["stats"]["total_tasks"] == 1, d

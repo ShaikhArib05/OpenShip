@@ -48,3 +48,8 @@ class TaskUpdate(BaseModel):
     labels: list[Annotated[str, Field(min_length=1, max_length=30)]] | None = Field(default=None, max_length=10)
     estimate: int | None = Field(default=None, ge=0, le=1000)
     position: float | None = None
+
+
+class CommentCreate(BaseModel):
+    # Mentions are stored inline as @[Display Name](user-uuid).
+    body: str = Field(min_length=1, max_length=5000)

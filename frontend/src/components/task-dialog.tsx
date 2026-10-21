@@ -16,7 +16,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { ActivityHistory, Comments } from "@/components/task-discussion";
 import { api } from "@/lib/api";
 import { PRIORITIES, STATUSES, type Member, type Task, type TaskPriority, type TaskStatus } from "@/lib/types";
 
@@ -30,6 +32,7 @@ export function TaskDialog({
   task,
   defaultStatus = "todo",
   members,
+  isOwner = false,
   onSaved,
   onDeleted,
 }: {
@@ -39,6 +42,7 @@ export function TaskDialog({
   task: Task | null;
   defaultStatus?: TaskStatus;
   members: Member[];
+  isOwner?: boolean;
   onSaved: (t: Task) => void;
   onDeleted?: (id: string) => void;
 }) {
@@ -89,6 +93,64 @@ export function TaskDialog({
     }
   }
 
+  const form = (
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input id="title" name="title" required maxLength={200} defaultValue={task?.title} autoFocus />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea id="description" name="description" rows={3} maxLength={10000} defaultValue={task?.description ?? ""} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SimpleSelect value={status} onChange={setStatus} options={STATUSES} />
+              </div>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <SimpleSelect value={priority} onChange={setPriority} options={PRIORITIES} />
+              </div>
+              <div className="space-y-2">
+                <Label>Assignee</Label>
+                <SimpleSelect
+                  value={assignee}
+                  onChange={setAssignee}
+                  options={[
+                    { value: UNASSIGNED, label: "Unassigned" },
+                    ...members.map((m) => ({ value: m.id, label: m.full_name ?? m.email })),
+                  ]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="due_date">Due date</Label>
+                <Input id="due_date" name="due_date" type="date" defaultValue={task?.due_date ?? ""} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="labels">Labels (comma separated)</Label>
+                <Input id="labels" name="labels" defaultValue={task?.labels.join(", ")} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="estimate">Estimate (points)</Label>
+                <Input id="estimate" name="estimate" type="number" min={0} max={1000} defaultValue={task?.estimate ?? ""} />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:justify-between">
+              {task ? (
+                <Button type="button" variant="outline" onClick={remove}>
+                  <Trash2 className="size-4" /> Delete
+                </Button>
+              ) : (
+                <span />
+              )}
+              <Button type="submit" disabled={busy}>
+                {busy ? "Saving…" : task ? "Save changes" : "Create task"}
+              </Button>
+            </DialogFooter>
+          </form>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -96,61 +158,26 @@ export function TaskDialog({
           <DialogTitle>{task ? "Edit task" : "New task"}</DialogTitle>
           <DialogDescription>{task ? "Update the details below." : "Add a task to this project."}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" required maxLength={200} defaultValue={task?.title} autoFocus />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea id="description" name="description" rows={3} maxLength={10000} defaultValue={task?.description ?? ""} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <SimpleSelect value={status} onChange={setStatus} options={STATUSES} />
-            </div>
-            <div className="space-y-2">
-              <Label>Priority</Label>
-              <SimpleSelect value={priority} onChange={setPriority} options={PRIORITIES} />
-            </div>
-            <div className="space-y-2">
-              <Label>Assignee</Label>
-              <SimpleSelect
-                value={assignee}
-                onChange={setAssignee}
-                options={[
-                  { value: UNASSIGNED, label: "Unassigned" },
-                  ...members.map((m) => ({ value: m.id, label: m.full_name ?? m.email })),
-                ]}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="due_date">Due date</Label>
-              <Input id="due_date" name="due_date" type="date" defaultValue={task?.due_date ?? ""} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="labels">Labels (comma separated)</Label>
-              <Input id="labels" name="labels" defaultValue={task?.labels.join(", ")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="estimate">Estimate (points)</Label>
-              <Input id="estimate" name="estimate" type="number" min={0} max={1000} defaultValue={task?.estimate ?? ""} />
-            </div>
-          </div>
-          <DialogFooter className="gap-2 sm:justify-between">
-            {task ? (
-              <Button type="button" variant="outline" onClick={remove}>
-                <Trash2 className="size-4" /> Delete
-              </Button>
-            ) : (
-              <span />
-            )}
-            <Button type="submit" disabled={busy}>
-              {busy ? "Saving…" : task ? "Save changes" : "Create task"}
-            </Button>
-          </DialogFooter>
-        </form>
+        {task ? (
+          <Tabs defaultValue="details">
+            <TabsList>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="comments">Comments</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="pt-3">
+              {form}
+            </TabsContent>
+            <TabsContent value="comments" className="pt-3">
+              <Comments taskId={task.id} members={members} isOwner={isOwner} />
+            </TabsContent>
+            <TabsContent value="activity" className="pt-3">
+              <ActivityHistory taskId={task.id} />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          form
+        )}
       </DialogContent>
     </Dialog>
   );
