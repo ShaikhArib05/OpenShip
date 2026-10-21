@@ -1,5 +1,9 @@
+import logging
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+
+logger = logging.getLogger("openship")
 
 
 class AppError(HTTPException):
@@ -21,5 +25,6 @@ def register_error_handlers(app: FastAPI) -> None:
         return JSONResponse({"error": exc.detail}, status_code=exc.status_code)
 
     @app.exception_handler(Exception)
-    async def unhandled(_: Request, exc: Exception):
+    async def unhandled(request: Request, exc: Exception):
+        logger.error("Unhandled error on %s %s", request.method, request.url.path, exc_info=exc)
         return JSONResponse({"error": "Internal server error"}, status_code=500)

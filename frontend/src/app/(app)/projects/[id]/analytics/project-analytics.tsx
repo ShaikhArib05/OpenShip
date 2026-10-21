@@ -88,7 +88,7 @@ export function ProjectAnalytics({ projectId }: { projectId: string }) {
         setData(a);
       })
       .catch((e) =>
-        setError(e instanceof ApiError && e.status < 500 ? "Project not found or you don't have access." : e.message),
+        setError(e instanceof ApiError && (e.status === 403 || e.status === 404) ? "Project not found or you don't have access." : e.message),
       );
   }, [projectId]);
 

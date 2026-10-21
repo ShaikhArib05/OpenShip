@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 
-from fastapi import Depends, Header
+import httpx
+from fastapi import Header
 from supabase import Client
 
-from app.core.db import get_db
+from app.core.config import get_settings
 from app.core.errors import AppError, Forbidden
 
 
@@ -13,21 +14,40 @@ class CurrentUser:
     email: str
 
 
-def get_current_user(
-    authorization: str | None = Header(default=None),
-    db: Client = Depends(get_db),
-) -> CurrentUser:
-    """Verify the Supabase access token by asking Supabase Auth."""
+_auth_http = httpx.Client(timeout=10)  # httpx clients are thread-safe
+
+
+def _fetch_user(token: str) -> httpx.Response:
+    s = get_settings()
+    return _auth_http.get(
+        f"{s.supabase_url}/auth/v1/user",
+        headers={"apikey": s.supabase_service_role_key, "Authorization": f"Bearer {token}"},
+    )
+
+
+def get_current_user(authorization: str | None = Header(default=None)) -> CurrentUser:
+    """Verify the Supabase access token by asking Supabase Auth.
+
+    Only a rejection from Supabase counts as 401; network trouble is a 503 so the client
+    does not mistake a hiccup for a bad login.
+    """
     if not authorization or not authorization.lower().startswith("bearer "):
         raise AppError(401, "Missing bearer token")
     token = authorization.split(" ", 1)[1]
-    try:
-        res = db.auth.get_user(token)
-    except Exception:
+    res = None
+    for attempt in range(2):
+        try:
+            res = _fetch_user(token)
+            break
+        except httpx.HTTPError:
+            if attempt == 1:
+                raise AppError(503, "Authentication service unavailable. Please try again.")
+    if res.status_code in (400, 401, 403):
         raise AppError(401, "Invalid or expired token")
-    if not res or not res.user:
-        raise AppError(401, "Invalid or expired token")
-    return CurrentUser(id=res.user.id, email=res.user.email or "")
+    if res.status_code != 200:
+        raise AppError(503, "Authentication service unavailable. Please try again.")
+    user = res.json()
+    return CurrentUser(id=user["id"], email=user.get("email") or "")
 
 
 def get_member_role(db: Client, workspace_id: str, user_id: str) -> str | None:

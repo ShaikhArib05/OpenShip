@@ -76,7 +76,7 @@ export function ProjectView({ id }: { id: string }) {
         setIsOwner(p.role === "owner");
         setMembers(await api<Member[]>(`/workspaces/${p.workspace_id}/members`));
       } catch (e) {
-        setError(e instanceof ApiError && e.status < 500 ? "Project not found or you don't have access." : (e as Error).message);
+        setError(e instanceof ApiError && (e.status === 403 || e.status === 404) ? "Project not found or you don't have access." : (e as Error).message);
       }
     })();
   }, [id]);

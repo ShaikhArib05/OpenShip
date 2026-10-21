@@ -24,6 +24,9 @@ Stack: Next.js (React, TypeScript, Tailwind, shadcn/ui) · FastAPI · Supabase (
    npm run dev
    ```
 
+Always start the backend with the project's virtualenv (`.venv\Scripts\python -m uvicorn app.main:app --reload`),
+not a globally installed `uvicorn`. A global install can have older library versions and fail intermittently.
+
 `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` live only in the backend `.env`. The browser only gets the anon key.
 Leaving `GEMINI_API_KEY` empty disables AI features; the rest of the app still works.
 

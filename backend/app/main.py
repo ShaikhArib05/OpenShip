@@ -6,9 +6,13 @@ from app.core.errors import register_error_handlers
 from app.routers import comments, notifications, projects, sprints, tasks, workspaces
 
 app = FastAPI(title="OpenShip API")
+_origins = [o.strip() for o in get_settings().frontend_origin.split(",") if o.strip()]
+# In local development, localhost and 127.0.0.1 are both valid ways to open the app.
+_dev_regex = r"http://(localhost|127\.0\.0\.1)(:\d+)?" if any("localhost" in o for o in _origins) else None
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[get_settings().frontend_origin],
+    allow_origins=_origins,
+    allow_origin_regex=_dev_regex,
     allow_methods=["*"],
     allow_headers=["*"],
 )
