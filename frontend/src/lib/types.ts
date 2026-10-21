@@ -90,3 +90,21 @@ export const PRIORITIES: { value: TaskPriority; label: string }[] = [
   { value: "high", label: "High" },
   { value: "urgent", label: "Urgent" },
 ];
+
+export type SprintStatus = "planned" | "active" | "completed";
+
+export interface Sprint {
+  id: string;
+  project_id: string;
+  name: string;
+  goal: string | null;
+  start_date: string;
+  end_date: string;
+  status: SprintStatus;
+  task_ids: string[];
+  total: number;
+  done: number;
+  points_total: number;
+  points_done: number;
+  project_name?: string;
+}

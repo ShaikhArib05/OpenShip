@@ -80,6 +80,29 @@ try:
     assert api.delete(f"/tasks/{t2['id']}", headers=B).status_code == 204
     d = api.get(f"/workspaces/{ws_id}/dashboard", headers=B).json()
     assert d["stats"]["projects"] == 1 and d["stats"]["total_tasks"] == 1, d
+    # --- sprints ---
+    t3 = api.post(f"/projects/{pid}/tasks", json={"title": "Fin", "estimate": 3, "status": "done"}, headers=A).json()
+    sp = api.post(f"/projects/{pid}/sprints", json={"name": "S1", "start_date": "2026-01-01", "end_date": "2026-01-14"}, headers=B)
+    assert sp.status_code == 201, sp.text
+    sid = sp.json()["id"]
+    assert api.post(f"/projects/{pid}/sprints", json={"name": "bad", "start_date": "2026-02-01", "end_date": "2026-01-01"}, headers=A).status_code == 422
+    assert api.get(f"/projects/{pid}/sprints", headers=C).status_code == 403
+    assert api.post(f"/sprints/{sid}/tasks", json={"add": [t1.json()["id"], t3["id"]]}, headers=C).status_code == 403
+    r = api.post(f"/sprints/{sid}/tasks", json={"add": [t1.json()["id"], t3["id"]]}, headers=A).json()
+    assert r["total"] == 2 and r["done"] == 1 and r["points_done"] == 3, r
+    assert api.patch(f"/sprints/{sid}", json={"status": "completed"}, headers=A).status_code == 409  # must start first
+    assert api.patch(f"/sprints/{sid}", json={"status": "active"}, headers=A).json()["status"] == "active"
+    sp2 = api.post(f"/projects/{pid}/sprints", json={"name": "S2", "start_date": "2026-01-15", "end_date": "2026-01-28"}, headers=A).json()
+    assert api.patch(f"/sprints/{sp2['id']}", json={"status": "active"}, headers=A).status_code == 409  # one active
+    # moving a task to another open sprint removes it from the first
+    r2 = api.post(f"/sprints/{sp2['id']}/tasks", json={"add": [t1.json()["id"]]}, headers=A).json()
+    assert r2["total"] == 1
+    assert next(s for s in api.get(f"/projects/{pid}/sprints", headers=A).json() if s["id"] == sid)["total"] == 1
+    assert len(api.get(f"/workspaces/{ws_id}/sprints", headers=A).json()) == 2
+    done = api.patch(f"/sprints/{sid}", json={"status": "completed"}, headers=A).json()
+    assert done["status"] == "completed" and done["total"] == 1  # finished task kept for history
+    assert api.patch(f"/sprints/{sid}", json={"name": "x"}, headers=A).status_code == 409
+    assert api.delete(f"/sprints/{sp2['id']}", headers=A).status_code == 204
     assert api.delete(f"/projects/{pid}", headers=A).status_code == 204
     print("SMOKE OK")
 finally:
