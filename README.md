@@ -28,7 +28,9 @@ Always start the backend with the project's virtualenv (`.venv\Scripts\python -m
 not a globally installed `uvicorn`. A global install can have older library versions and fail intermittently.
 
 `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` live only in the backend `.env`. The browser only gets the anon key.
-Leaving `GEMINI_API_KEY` empty disables AI features; the rest of the app still works.
+Leaving `GEMINI_API_KEY` empty disables AI features (buttons are greyed out); the rest of the app still works.
+AI output is only ever a suggestion: you review and approve it before anything is saved. If the main model is overloaded the
+backend retries and then tries the models in `GEMINI_FALLBACK_MODELS`. Live check: `python -m scripts.smoke_ai` (uses quota).
 
 ## Status
 
@@ -39,4 +41,5 @@ Leaving `GEMINI_API_KEY` empty disables AI features; the rest of the app still w
 - [x] Stage 5: filters, search, comments with @mentions, task activity
 - [x] Stage 6: backlog and sprints
 - [x] Stage 7: notifications and project analytics (burndown)
-- [ ] Stages 8-10: AI, polish, deploy
+- [x] Stage 8: Gemini AI assistant (task generator, breakdown, priorities, sprint planner, summary)
+- [ ] Stages 9-10: polish, deploy

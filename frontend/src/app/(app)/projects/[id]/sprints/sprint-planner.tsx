@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { AiSprintPlan } from "@/components/ai-sprint-plan";
 import { SimpleSelect } from "@/components/simple-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -273,6 +274,7 @@ export function SprintPlanner({ projectId }: { projectId: string }) {
                         <CheckCheck className="size-3.5" /> Complete sprint
                       </Button>
                     )}
+                    <AiSprintPlan sprint={s} projectId={projectId} onApplied={() => void reload()} />
                     <Button size="sm" variant="ghost" onClick={() => removeSprint(s)} aria-label={`Delete ${s.name}`}>
                       <Trash2 className="size-3.5" />
                     </Button>

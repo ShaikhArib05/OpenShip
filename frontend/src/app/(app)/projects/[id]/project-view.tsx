@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { AiAssistant } from "@/components/ai-assistant";
 import { KanbanBoard } from "@/components/kanban-board";
 import { SimpleSelect } from "@/components/simple-select";
 import { TaskDialog } from "@/components/task-dialog";
@@ -66,6 +67,7 @@ export function ProjectView({ id }: { id: string }) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [isOwner, setIsOwner] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const filtersActive = JSON.stringify(filters) !== JSON.stringify(NO_FILTERS);
 
   useEffect(() => {
@@ -99,7 +101,7 @@ export function ProjectView({ id }: { id: string }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [id, project, filters]);
+  }, [id, project, filters, reloadKey]);
 
   function openDialog(task: Task | null, status: TaskStatus = "todo") {
     setDialog({ task, status, key: Date.now() });
@@ -153,6 +155,7 @@ export function ProjectView({ id }: { id: string }) {
           <Button size="sm" onClick={() => openDialog(null)}>
             <Plus className="size-4" /> New task
           </Button>
+          <AiAssistant projectId={id} onChanged={() => setReloadKey((k) => k + 1)} />
           <Link href={`/projects/${id}/analytics`}>
             <Button variant="outline" size="sm">
               <BarChart3 className="size-4" /> Analytics
@@ -244,6 +247,7 @@ export function ProjectView({ id }: { id: string }) {
           defaultStatus={dialog.status}
           members={members}
           isOwner={isOwner}
+          onSubtasksAdded={() => setReloadKey((k) => k + 1)}
           onSaved={onSaved}
           onDeleted={(tid) => {
             setTasks((ts) => ts?.filter((t) => t.id !== tid) ?? null);

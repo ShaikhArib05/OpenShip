@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { AiBreakdown } from "@/components/ai-breakdown";
 import { ActivityHistory, Comments } from "@/components/task-discussion";
 import { api } from "@/lib/api";
 import { PRIORITIES, STATUSES, type Member, type Task, type TaskPriority, type TaskStatus } from "@/lib/types";
@@ -33,6 +34,7 @@ export function TaskDialog({
   defaultStatus = "todo",
   members,
   isOwner = false,
+  onSubtasksAdded,
   onSaved,
   onDeleted,
 }: {
@@ -43,6 +45,7 @@ export function TaskDialog({
   defaultStatus?: TaskStatus;
   members: Member[];
   isOwner?: boolean;
+  onSubtasksAdded?: () => void;
   onSaved: (t: Task) => void;
   onDeleted?: (id: string) => void;
 }) {
@@ -164,6 +167,7 @@ export function TaskDialog({
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="comments">Comments</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="ai">AI</TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="pt-3">
               {form}
@@ -173,6 +177,9 @@ export function TaskDialog({
             </TabsContent>
             <TabsContent value="activity" className="pt-3">
               <ActivityHistory taskId={task.id} />
+            </TabsContent>
+            <TabsContent value="ai" className="pt-3">
+              <AiBreakdown task={task} onAdded={() => onSubtasksAdded?.()} />
             </TabsContent>
           </Tabs>
         ) : (

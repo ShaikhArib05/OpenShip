@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
-from app.routers import comments, notifications, projects, sprints, tasks, workspaces
+from app.routers import ai, comments, notifications, projects, sprints, tasks, workspaces
 
 app = FastAPI(title="OpenShip API")
 _origins = [o.strip() for o in get_settings().frontend_origin.split(",") if o.strip()]
@@ -23,6 +23,7 @@ app.include_router(tasks.router)
 app.include_router(comments.router)
 app.include_router(sprints.router)
 app.include_router(notifications.router)
+app.include_router(ai.router)
 
 
 @app.get("/health")
